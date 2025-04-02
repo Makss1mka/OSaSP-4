@@ -98,7 +98,7 @@ void create_shared_queue() {
 
 void unlink_and_free_queue() {
     shmdt(message_queue);
-    message_queue = NULL;
+    shmctl(sem_id, IPC_RMID, NULL);
 }
 
 
@@ -219,7 +219,7 @@ void kill_process_by_ind(int ind, int type) {
         if (consumers_count > 0 && ind < consumers_count) {
             pid_t pid = consumers[ind];
     
-            kill(pid, SIGUSR2);
+            kill(pid, SIGUSR1);
     
             for (int i = ind + 1; i < consumers_count; i++) {
                 consumers[i - 1] = consumers[i];
@@ -229,7 +229,7 @@ void kill_process_by_ind(int ind, int type) {
     
             printf("Parent: Killed consumer with PID %d. Remaining: %d\n", pid, consumers_count);
         } else {
-            printf("Parent: No producers to kill\n");
+            printf("Parent: No consumers to kill\n");
         }
     } else {
         printf("Parent: invalid process type\n");
@@ -266,7 +266,7 @@ void cleanup_and_exit(void) {
 
     while (wait(NULL) > 0);
 
-    if (!message_queue) {
+    if (message_queue) {
         unlink_and_free_queue();
     }
     semctl(sem_id, 0, IPC_RMID);
@@ -315,11 +315,7 @@ int main() {
         } else if (strcmp(option, "_") == 0) {
             kill_process_by_ind(consumers_count - 1, -1);
         } else if (strcmp(option, "l") == 0) {
-            //sem_wait(sem_mutex_id);
-
             queue_print(message_queue);
-
-            //sem_up(sem_mutex_id);
         } else if (strcmp(option, "s") == 0) {
             printf("\nParent: processes list:");
 
@@ -333,9 +329,7 @@ int main() {
 
             printf("\n");
         } else if (strcmp(option, "q") == 0) {
-            kill_all_processes(1);
-            kill_all_processes(-1);
-            unlink_and_free_queue();
+            cleanup_and_exit();
             printf("Parent: Exiting\n");
             break;
         } 
