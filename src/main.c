@@ -98,7 +98,7 @@ void create_shared_queue() {
 
 void unlink_and_free_queue() {
     shmdt(message_queue);
-    shmctl(sem_id, IPC_RMID, NULL);
+    shmctl(queue_shm_id, IPC_RMID, NULL);
 }
 
 
